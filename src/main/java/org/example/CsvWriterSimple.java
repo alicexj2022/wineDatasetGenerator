@@ -20,9 +20,12 @@ public class CsvWriterSimple {
     private static final String EMBEDDED_DOUBLE_QUOTES = "\"\"";
     private static final String NEW_LINE_UNIX = "\n";
     private static final String NEW_LINE_WINDOWS = "\r\n";
-
+    private static List<String[]> visitorsTotalPerDate = new ArrayList<>();
+    private static List<String[]> downloadedPerItem = new ArrayList<>();
     private static List<String[]> listPerDate = new ArrayList<>();
     private static List<String[]> listPerUser = new ArrayList<>();
+    private static List<LocalDate> dateHiarachy = new ArrayList<>();
+
 
     public static void main(String[] args) throws IOException, ParseException {
 
@@ -98,16 +101,69 @@ public class CsvWriterSimple {
 
     }
 
+    private static List<String[]> createCsvVisitorsTotalPerDate() throws ParseException {
+        // Used for downloaded per visitors
+        // downloaded total should be less than visitors total
+        dateHiarachy = dataGenerator.getDates("7-Jun-2020", "8-Jun-2022");
+        int numberOfElements = 731;
+
+        // Visitors Per day for app store
+        List<Integer> vApp = dataGenerator.generateRandomizedIntegerList("scale3", numberOfElements);
+        List<Integer> vGoogle = dataGenerator.generateRandomizedIntegerList("scale3", numberOfElements);
+
+        String[] header = {"VisitorsApp", "VisitorsGoogle", "DownloadsGoogle", "DownloadsApp", "date"};
+        visitorsTotalPerDate.add(header);
+        for (int i = 0; i < dateHiarachy.size() - 1; i++) {
+
+            String[] record = {vApp.get(i).toString(), vGoogle.get(i).toString(), dateHiarachy.get(i).toString()};
+            visitorsTotalPerDate.add(record);
+        }
+        return visitorsTotalPerDate;
+    }
+
+    private static List<String[]> createCsvVisitorsDownloadedDetailed() throws ParseException {
+        // Used for downloaded per visitors
+        // downloaded total should be less than visitors total
+        int numberOfElements = 731;
+
+        for (int i = 1; i < visitorsTotalPerDate.size(); i++) {
+            String[] currentRow = visitorsTotalPerDate.get(i);
+            String currentDate = currentRow[2];
+            System.out.println("current DATE is :" + currentDate);
+            int currentVisitorsSumGoogle = Integer.parseInt(currentRow[1]);
+            int currentVisitorsSumApp = Integer.parseInt(currentRow[0]);
+            List<Integer> dApp = dataGenerator.generateRandomizedIntegerList("scale6", currentVisitorsSumGoogle);
+            List<Integer> dGoogle = dataGenerator.generateRandomizedIntegerList("scale6", currentVisitorsSumApp);
+            String[] header = {"VisitorsApp", "VisitorsGoogle", "DownloadsGoogle", "DownloadsApp", "RegisteredApp", "RegisteredGoogle", "date"};
+            for (int x = 0; x < currentVisitorsSumGoogle; x++) {
+                int isDownloadedFromGoogle = dGoogle.get(x);
+                int registeredFromGoogle = (int) Math.round(Math.random());
+                int currentRegistered = 0;
+                if (isDownloadedFromGoogle == 1) {
+                    currentRegistered = registeredFromGoogle;
+                }
+                String[] record = {"0", "1",  Integer.toString(isDownloadedFromGoogle),"0", "0",Integer.toString(currentRegistered), currentDate};
+                downloadedPerItem.add(record);
+            }
+
+            for (int y = 0; y < currentVisitorsSumApp; y++) {
+                int isDownloaded = dApp.get(y);
+                int isRegistered = (int) Math.round(Math.random());
+                int currentRegistered = 0;
+                if (isDownloaded == 1) {
+                    currentRegistered = isRegistered;
+                }
+                String[] record = {"1", "0", "0", dApp.get(i).toString(), Integer.toString(currentRegistered), "0",currentDate};
+                downloadedPerItem.add(record);
+            }
+        }
+        return downloadedPerItem;
+    }
+
     private static List<String[]> createCsvDataSpecial() throws ParseException {
 
         List<LocalDate> dateHiarachy = dataGenerator.getDates("7-Jun-2020", "8-Jun-2022");
         int numberOfElements = 731;
-
-        List<Integer> vApp = dataGenerator.generateRandomizedIntegerList("scale3", numberOfElements);
-        List<Integer> vGoogle = dataGenerator.generateRandomizedIntegerList("scale3", numberOfElements);
-        List<Integer> dGoogle = dataGenerator.generateRandomizedIntegerList("scale2", numberOfElements);
-        List<Integer> dApp = dataGenerator.generateRandomizedIntegerList("scale2", numberOfElements);
-        List<Integer> registered = dataGenerator.generateRandomizedIntegerList("scale1", numberOfElements);
 
         List<Integer> list1 = dataGenerator.generateRandomizedIntegerList("scale1", numberOfElements);
         List<Integer> list2 = dataGenerator.generateRandomizedIntegerList("scale2", numberOfElements);
@@ -118,12 +174,11 @@ public class CsvWriterSimple {
         List<Integer> list7 = dataGenerator.generateRandomizedIntegerList("scale1", numberOfElements);
 
 
-        String[] header = {"VisitorsApp", "VisitorsGoogle", "DownloadsGoogle", "DownloadsApp", "Registered", "SearchGoogle", "SearchApp", "PromoGoogle", "PromoFacebook", "uniqueApp", "uniqueFacebook", "visitorsFromVintec", "date"};
+        String[] header = {"SearchGoogle", "SearchApp", "PromoGoogle", "PromoFacebook", "uniqueApp", "uniqueFacebook", "visitorsFromVintec", "date"};
         listPerDate.add(header);
         for (int i = 0; i < dateHiarachy.size() - 1; i++) {
 
-            String[] record = {vApp.get(i).toString(), vGoogle.get(i).toString(), dGoogle.get(i).toString(),
-                    dApp.get(i).toString(), registered.get(i).toString(), list1.get(i).toString(), list2.get(i).toString(),
+            String[] record = {list1.get(i).toString(), list2.get(i).toString(),
                     list3.get(i).toString(), list4.get(i).toString(), list5.get(i).toString(),
                     list6.get(i).toString(), list7.get(i).toString(), dateHiarachy.get(i).toString()};
             listPerDate.add(record);

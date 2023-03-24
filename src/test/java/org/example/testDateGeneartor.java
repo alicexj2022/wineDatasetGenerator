@@ -13,17 +13,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class testDateGeneartor {
     @Test
-   void  testDateGeneartor() throws ParseException {
-
-        HashMap<String,List<Integer>> dates = dataGenerator.getDaysBetweenDates("7-Jun-2020","8-Jun-2022");
-        List<Integer> d = dates.get("months");
-
-         assert(d.get(0).toString().equals("5"));
-
-         assertTrue(dates.get("months").size()==731);
-    }
-
-    @Test
     void  testGetDate() throws ParseException {
 
        List<LocalDate> dates = dataGenerator.getDates("2020-06-07","2022-06-08");

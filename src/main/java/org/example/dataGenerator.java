@@ -10,37 +10,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class dataGenerator {
-    public static HashMap<String, List<Integer>> getDaysBetweenDates(String s, String e) throws ParseException {
-        HashMap<String, List<Integer>> dateHiarachy  = new HashMap<String, List<Integer>>();
-        List<Integer> months = new ArrayList<>();
-        List<Integer> weeks = new ArrayList<>();
-        List<Integer> years = new ArrayList<>();
-        List<Integer> datesOfmonth = new ArrayList<>();
-        SimpleDateFormat formatter = new SimpleDateFormat("dd-MMM-yyyy");
-        Date startdate = formatter.parse(s);
-        Date enddate = formatter.parse(e);
-
-        List<Date> dates = new ArrayList<Date>();
-        Calendar calendar = new GregorianCalendar();
-        calendar.setTime(startdate);
-
-        while (calendar.getTime().before(enddate))
-        {
-            Date result = calendar.getTime();
-            dates.add(result);
-            months.add(calendar.get(Calendar.MONTH));
-            years.add(calendar.get(Calendar.YEAR));
-            weeks.add(calendar.get(Calendar.WEEK_OF_YEAR));
-            datesOfmonth .add(calendar.get(Calendar.DATE));
-            calendar.add(Calendar.DATE, 1);
-        }
-
-        dateHiarachy.put("months",months);
-        dateHiarachy.put("years",years);
-        dateHiarachy.put("weeks",weeks);
-        dateHiarachy.put("dates",datesOfmonth );
-        return dateHiarachy;
-    }
     public static  List<LocalDate> getDates(String s, String e) throws ParseException {
 
         LocalDate localDateStart = LocalDate.of(2020, Month.JUNE, 7); // today's date
@@ -86,7 +55,7 @@ public class dataGenerator {
                 givenList = Arrays.asList(60,70,80,90);
                 break;
             case "scale3":
-                givenList = Arrays.asList(200,400,100);
+                givenList = Arrays.asList(200,400,100,50,30);
                 break;
             case "scale4":
                 givenList = Arrays.asList(1,2,3,4,5);
@@ -95,7 +64,7 @@ public class dataGenerator {
                 givenList = Arrays.asList(0,1,2,3,4,5,6,7,8,9);
                 break;
             case "scale6":
-                givenList = Arrays.asList(0,1);
+                givenList = Arrays.asList(0,1,0);
                 break;
             //optional
             default:
