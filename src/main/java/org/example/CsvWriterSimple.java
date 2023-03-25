@@ -20,7 +20,16 @@ public class CsvWriterSimple {
     private static final String EMBEDDED_DOUBLE_QUOTES = "\"\"";
     private static final String NEW_LINE_UNIX = "\n";
     private static final String NEW_LINE_WINDOWS = "\r\n";
-    private static List<String[]> visitorsTotalPerDate = new ArrayList<>();
+    private static List<String[]> visitorsTotalPerDate;
+
+    static {
+        try {
+            visitorsTotalPerDate = createCsvVisitorsTotalPerDate();
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private static List<String[]> downloadedPerItem = new ArrayList<>();
     private static List<String[]> listPerDate = new ArrayList<>();
     private static List<String[]> listPerUser = new ArrayList<>();
@@ -30,7 +39,7 @@ public class CsvWriterSimple {
     public static void main(String[] args) throws IOException, ParseException {
 
         CsvWriterSimple writer = new CsvWriterSimple();
-        writer.writeToCsvFile(createCsvDataSpecial(), new File("awareness.csv"));
+        writer.writeToCsvFile(createCsvVisitorsDownloadedDetailed(), new File("awareness.csv"));
 
         CsvWriterSimple writer2 = new CsvWriterSimple();
         writer2.writeToCsvFile(createCsvDataUserTable(), new File("referal.csv"));
@@ -124,7 +133,7 @@ public class CsvWriterSimple {
     private static List<String[]> createCsvVisitorsDownloadedDetailed() throws ParseException {
         // Used for downloaded per visitors
         // downloaded total should be less than visitors total
-        int numberOfElements = 731;
+       // int numberOfElements = 731;
 
         for (int i = 1; i < visitorsTotalPerDate.size(); i++) {
             String[] currentRow = visitorsTotalPerDate.get(i);
@@ -134,7 +143,10 @@ public class CsvWriterSimple {
             int currentVisitorsSumApp = Integer.parseInt(currentRow[0]);
             List<Integer> dApp = dataGenerator.generateRandomizedIntegerList("scale6", currentVisitorsSumGoogle);
             List<Integer> dGoogle = dataGenerator.generateRandomizedIntegerList("scale6", currentVisitorsSumApp);
+
+            // TODO: add the country per row with random value here
             String[] header = {"VisitorsApp", "VisitorsGoogle", "DownloadsGoogle", "DownloadsApp", "RegisteredApp", "RegisteredGoogle", "date"};
+            downloadedPerItem.add(header);
             for (int x = 0; x < currentVisitorsSumGoogle; x++) {
                 int isDownloadedFromGoogle = dGoogle.get(x);
                 int registeredFromGoogle = (int) Math.round(Math.random());
@@ -160,29 +172,35 @@ public class CsvWriterSimple {
         return downloadedPerItem;
     }
 
-    private static List<String[]> createCsvDataSpecial() throws ParseException {
+    private static List<String[]> createCsvAwarene ssTotalByDate() throws ParseException {
 
         List<LocalDate> dateHiarachy = dataGenerator.getDates("7-Jun-2020", "8-Jun-2022");
         int numberOfElements = 731;
 
-        List<Integer> list1 = dataGenerator.generateRandomizedIntegerList("scale1", numberOfElements);
-        List<Integer> list2 = dataGenerator.generateRandomizedIntegerList("scale2", numberOfElements);
-        List<Integer> list3 = dataGenerator.generateRandomizedIntegerList("scale1", numberOfElements);
-        List<Integer> list4 = dataGenerator.generateRandomizedIntegerList("scale2", numberOfElements);
-        List<Integer> list5 = dataGenerator.generateRandomizedIntegerList("scale1", numberOfElements);
-        List<Integer> list6 = dataGenerator.generateRandomizedIntegerList("scale2", numberOfElements);
-        List<Integer> list7 = dataGenerator.generateRandomizedIntegerList("scale1", numberOfElements);
+        List<Integer> searchGoogleTotalByDate = dataGenerator.generateRandomizedIntegerList("scale1", numberOfElements);
+        List<Integer> searchAppTotalByDate = dataGenerator.generateRandomizedIntegerList("scale2", numberOfElements);
+        List<Integer> promoGoogleTotalByDate = dataGenerator.generateRandomizedIntegerList("scale1", numberOfElements);
+        List<Integer> promoAppTotalByDate= dataGenerator.generateRandomizedIntegerList("scale2", numberOfElements);
+        List<Integer>  uniqueAppTotalByDate = dataGenerator.generateRandomizedIntegerList("scale1", numberOfElements);
+        List<Integer> uniqueFacebookTotalByDate = dataGenerator.generateRandomizedIntegerList("scale2", numberOfElements);
+        List<Integer> visitorsFromVintecTotalByDate = dataGenerator.generateRandomizedIntegerList("scale1", numberOfElements);
 
 
         String[] header = {"SearchGoogle", "SearchApp", "PromoGoogle", "PromoFacebook", "uniqueApp", "uniqueFacebook", "visitorsFromVintec", "date"};
         listPerDate.add(header);
         for (int i = 0; i < dateHiarachy.size() - 1; i++) {
 
-            String[] record = {list1.get(i).toString(), list2.get(i).toString(),
-                    list3.get(i).toString(), list4.get(i).toString(), list5.get(i).toString(),
-                    list6.get(i).toString(), list7.get(i).toString(), dateHiarachy.get(i).toString()};
+            String[] record = {searchGoogleTotalByDate.get(i).toString(), searchAppTotalByDate.get(i).toString(),
+                    promoGoogleTotalByDate.get(i).toString(), promoAppTotalByDate.get(i).toString(), uniqueAppTotalByDate.get(i).toString(),
+                    uniqueFacebookTotalByDate.get(i).toString(), visitorsFromVintecTotalByDate.get(i).toString(), dateHiarachy.get(i).toString()};
             listPerDate.add(record);
         }
+        return listPerDate;
+    }
+
+    private static List<String[]> createCsvAwarenessDetailed() throws ParseException {
+
+        // TODO: add the item for the awareness, possibly 4 more tables, namely searches, promos, uniquenes, Vintec
         return listPerDate;
     }
 
