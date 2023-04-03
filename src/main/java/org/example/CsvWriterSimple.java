@@ -12,6 +12,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.example.readCsv.getRandomizedCountryList;
+
 public class CsvWriterSimple {
 
     private static final String COMMA = ",";
@@ -20,29 +22,26 @@ public class CsvWriterSimple {
     private static final String EMBEDDED_DOUBLE_QUOTES = "\"\"";
     private static final String NEW_LINE_UNIX = "\n";
     private static final String NEW_LINE_WINDOWS = "\r\n";
-    private static List<String[]> visitorsTotalPerDate;
-
-    static {
-        try {
-            visitorsTotalPerDate = createCsvVisitorsTotalPerDate();
-        } catch (ParseException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
+    private static List<String[]> TotalPerDate = new ArrayList<>();
     private static List<String[]> downloadedPerItem = new ArrayList<>();
     private static List<String[]> listPerDate = new ArrayList<>();
-    private static List<String[]> listPerUser = new ArrayList<>();
     private static List<LocalDate> dateHiarachy = new ArrayList<>();
 
 
     public static void main(String[] args) throws IOException, ParseException {
 
+
+        CsvWriterSimple writer1 = new CsvWriterSimple();
+        writer1.writeToCsvFile(createCsvAwarenessDetailed(), new File("awarenessDetailed.csv"));
+
+        List<String[]> TotalPerDate = createCsvVisitorsTotalPerDate();
+        List<String[]> registeredPerDateAndPerSource = createCsvVisitorsDownloadedDetailed( TotalPerDate);
+
         CsvWriterSimple writer = new CsvWriterSimple();
-        writer.writeToCsvFile(createCsvVisitorsDownloadedDetailed(), new File("awareness.csv"));
+        writer.writeToCsvFile(registeredPerDateAndPerSource, new File("downloaded.csv"));
 
         CsvWriterSimple writer2 = new CsvWriterSimple();
-        writer2.writeToCsvFile(createCsvDataUserTable(), new File("referal.csv"));
+        writer2.writeToCsvFile(createCsvDataUserTable(TotalPerDate), new File("users.csv"));
 
     }
 
@@ -110,7 +109,7 @@ public class CsvWriterSimple {
 
     }
 
-    private static List<String[]> createCsvVisitorsTotalPerDate() throws ParseException {
+    public static List<String[]> createCsvVisitorsTotalPerDate() throws ParseException {
         // Used for downloaded per visitors
         // downloaded total should be less than visitors total
         dateHiarachy = dataGenerator.getDates("7-Jun-2020", "8-Jun-2022");
@@ -119,92 +118,111 @@ public class CsvWriterSimple {
         // Visitors Per day for app store
         List<Integer> vApp = dataGenerator.generateRandomizedIntegerList("scale3", numberOfElements);
         List<Integer> vGoogle = dataGenerator.generateRandomizedIntegerList("scale3", numberOfElements);
+        List<Integer> rApp = dataGenerator.generateRandomizedIntegerList("scale3", numberOfElements);
+        List<Integer> rGoogle = dataGenerator.generateRandomizedIntegerList("scale3", numberOfElements);
+        // User for generating users table, radomized total of how many visitors per day
+        List<Integer> visitorsPerDay = dataGenerator.generateRandomizedIntegerList("scale3", numberOfElements);
 
-        String[] header = {"VisitorsApp", "VisitorsGoogle", "DownloadsGoogle", "DownloadsApp", "date"};
-        visitorsTotalPerDate.add(header);
+        // fake the registeredApp and RegisteredGoogle, TODO, The two values should be calcualted through group by from getRegisteredBySourceAndDate
+        String[] header = {"VisitorsApp", "VisitorsGoogle", "RegisteredApp","","RegisteredGoogle","date"};
+        TotalPerDate.add(header);
         for (int i = 0; i < dateHiarachy.size() - 1; i++) {
 
-            String[] record = {vApp.get(i).toString(), vGoogle.get(i).toString(), dateHiarachy.get(i).toString()};
-            visitorsTotalPerDate.add(record);
+            String[] record = {
+                    vApp.get(i).toString(), vGoogle.get(i).toString(), rApp.get(i).toString(), rGoogle.get(i).toString(), dateHiarachy.get(i).toString()};
+            TotalPerDate.add(record);
         }
-        return visitorsTotalPerDate;
+        return TotalPerDate;
     }
 
-    private static List<String[]> createCsvVisitorsDownloadedDetailed() throws ParseException {
+    public static List<String[]> createCsvVisitorsDownloadedDetailed(List<String[]> TotalPerDate) throws ParseException, IOException {
         // Used for downloaded per visitors
         // downloaded total should be less than visitors total
-       // int numberOfElements = 731;
+        // int numberOfElements = 731;
+        String[] header = {"VisitorsApp", "VisitorsGoogle", "DownloadsGoogle", "DownloadsApp", "RegisteredApp", "RegisteredGoogle", "country","continent","date"};
+        downloadedPerItem.add(header);
+        List<Country> countryList  = readCsv.getDataFromCsv();
 
-        for (int i = 1; i < visitorsTotalPerDate.size(); i++) {
-            String[] currentRow = visitorsTotalPerDate.get(i);
-            String currentDate = currentRow[2];
+        for (int i = 1; i < TotalPerDate.size(); i++) {
+            List<Country> randomizedCountryList = getRandomizedCountryList(countryList);
+            String[] currentRow = TotalPerDate.get(i);
+            String currentDate = currentRow[4];
             System.out.println("current DATE is :" + currentDate);
             int currentVisitorsSumGoogle = Integer.parseInt(currentRow[1]);
             int currentVisitorsSumApp = Integer.parseInt(currentRow[0]);
-            List<Integer> dApp = dataGenerator.generateRandomizedIntegerList("scale6", currentVisitorsSumGoogle);
-            List<Integer> dGoogle = dataGenerator.generateRandomizedIntegerList("scale6", currentVisitorsSumApp);
+            List<Integer> dApp = dataGenerator.generateRandomizedIntegerList("scale6", currentVisitorsSumApp);
+            List<Integer> dGoogle = dataGenerator.generateRandomizedIntegerList("scale6", currentVisitorsSumGoogle);
+            System.out.println("dApp size"+ dApp.size());
+            System.out.println("dGoogle size"+ dGoogle.size());
+
 
             // TODO: add the country per row with random value here
-            String[] header = {"VisitorsApp", "VisitorsGoogle", "DownloadsGoogle", "DownloadsApp", "RegisteredApp", "RegisteredGoogle", "date"};
-            downloadedPerItem.add(header);
-            for (int x = 0; x < currentVisitorsSumGoogle; x++) {
-                int isDownloadedFromGoogle = dGoogle.get(x);
+            for (int j = 0; j <= dGoogle.size()-1; j++) {
+                int isDownloadedFromGoogle = dGoogle.get(j);
                 int registeredFromGoogle = (int) Math.round(Math.random());
                 int currentRegistered = 0;
                 if (isDownloadedFromGoogle == 1) {
                     currentRegistered = registeredFromGoogle;
                 }
-                String[] record = {"0", "1",  Integer.toString(isDownloadedFromGoogle),"0", "0",Integer.toString(currentRegistered), currentDate};
+                String[] record = {"0", "1", Integer.toString(isDownloadedFromGoogle), "0", "0", Integer.toString(currentRegistered),randomizedCountryList.get(j).getName(),
+                randomizedCountryList.get(j).getContinent(), currentDate};
                 downloadedPerItem.add(record);
             }
 
-            for (int y = 0; y < currentVisitorsSumApp; y++) {
+            for (int y = 0; y <= dApp.size()-1; y++) {
                 int isDownloaded = dApp.get(y);
                 int isRegistered = (int) Math.round(Math.random());
                 int currentRegistered = 0;
                 if (isDownloaded == 1) {
                     currentRegistered = isRegistered;
                 }
-                String[] record = {"1", "0", "0", dApp.get(i).toString(), Integer.toString(currentRegistered), "0",currentDate};
+                String[] record = {"1", "0", "0", Integer.toString(isDownloaded), Integer.toString(currentRegistered), "0", randomizedCountryList.get(y).getName(),
+                        randomizedCountryList.get(y).getContinent(),currentDate};
                 downloadedPerItem.add(record);
             }
         }
         return downloadedPerItem;
     }
 
-    private static List<String[]> createCsvAwarene ssTotalByDate() throws ParseException {
-
-        List<LocalDate> dateHiarachy = dataGenerator.getDates("7-Jun-2020", "8-Jun-2022");
-        int numberOfElements = 731;
-
-        List<Integer> searchGoogleTotalByDate = dataGenerator.generateRandomizedIntegerList("scale1", numberOfElements);
-        List<Integer> searchAppTotalByDate = dataGenerator.generateRandomizedIntegerList("scale2", numberOfElements);
-        List<Integer> promoGoogleTotalByDate = dataGenerator.generateRandomizedIntegerList("scale1", numberOfElements);
-        List<Integer> promoAppTotalByDate= dataGenerator.generateRandomizedIntegerList("scale2", numberOfElements);
-        List<Integer>  uniqueAppTotalByDate = dataGenerator.generateRandomizedIntegerList("scale1", numberOfElements);
-        List<Integer> uniqueFacebookTotalByDate = dataGenerator.generateRandomizedIntegerList("scale2", numberOfElements);
-        List<Integer> visitorsFromVintecTotalByDate = dataGenerator.generateRandomizedIntegerList("scale1", numberOfElements);
-
-
-        String[] header = {"SearchGoogle", "SearchApp", "PromoGoogle", "PromoFacebook", "uniqueApp", "uniqueFacebook", "visitorsFromVintec", "date"};
-        listPerDate.add(header);
-        for (int i = 0; i < dateHiarachy.size() - 1; i++) {
-
-            String[] record = {searchGoogleTotalByDate.get(i).toString(), searchAppTotalByDate.get(i).toString(),
-                    promoGoogleTotalByDate.get(i).toString(), promoAppTotalByDate.get(i).toString(), uniqueAppTotalByDate.get(i).toString(),
-                    uniqueFacebookTotalByDate.get(i).toString(), visitorsFromVintecTotalByDate.get(i).toString(), dateHiarachy.get(i).toString()};
-            listPerDate.add(record);
+    private static List<String[]> createCsvAwarenessDetailed() throws ParseException, IOException {
+        List<String[]> awarenessDetailed =  new ArrayList<>();
+        // For total daily awareness, for simplicity, create the one total for all the awareness entries, the randomness of total number is implemented in a broader scope.
+        List<Integer> awarenessTotalByDate = dataGenerator.generateRandomizedIntegerList("scale1", 731);
+        String[] header = {"SearchApp", "SearchGoogle", "PromoGoogle", "PromoApp", "UniqueApp", "UniqueFacebook", "VisitorsFromVintec","date", "country","continent"};
+        List<Country> countryList  = readCsv.getDataFromCsv();
+        dateHiarachy = dataGenerator.getDates("7-Jun-2020", "8-Jun-2022");
+        for (int i = 1; i < 731; i++) {
+            int todayTotalItems = awarenessTotalByDate.get(i);
+            String currentDate = dateHiarachy.get(i).toString();
+            List<Integer> radomizedValue1 = dataGenerator.generateRandomizedIntegerList("scale6", todayTotalItems);
+            List<Integer> radomizedValue2 = dataGenerator.generateRandomizedIntegerList("scale6", todayTotalItems);
+            List<Integer> radomizedValue3 = dataGenerator.generateRandomizedIntegerList("scale6", todayTotalItems);
+            List<Integer> radomizedValue4 = dataGenerator.generateRandomizedIntegerList("scale6", todayTotalItems);
+            List<Integer> radomizedValue5 = dataGenerator.generateRandomizedIntegerList("scale6", todayTotalItems);
+            List<Integer> radomizedValue6 = dataGenerator.generateRandomizedIntegerList("scale6", todayTotalItems);
+            List<Integer> radomizedValue7 = dataGenerator.generateRandomizedIntegerList("scale6", todayTotalItems);
+            List<Country> randomizedCountryList = getRandomizedCountryList(countryList);
+            for (int x = 1; x < todayTotalItems; x++) {
+                String[] record ={radomizedValue1.get(x).toString(),
+                        radomizedValue1.get(x).toString(),
+                        radomizedValue2.get(x).toString(),
+                        radomizedValue3.get(x).toString(),
+                        radomizedValue4.get(x).toString(),
+                        radomizedValue5.get(x).toString(),
+                        radomizedValue6.get(x).toString(),
+                        radomizedValue7.get(x).toString(),
+                        randomizedCountryList.get(x).getName(),
+                        randomizedCountryList.get(x).getContinent(),
+                        currentDate};
+                awarenessDetailed.add(record );
+            }
         }
-        return listPerDate;
-    }
+          return awarenessDetailed;
+        }
 
-    private static List<String[]> createCsvAwarenessDetailed() throws ParseException {
 
-        // TODO: add the item for the awareness, possibly 4 more tables, namely searches, promos, uniquenes, Vintec
-        return listPerDate;
-    }
-
-    public static List<String[]> createCsvDataUserTable() throws ParseException {
+    public static List<String[]> createCsvDataUserTable( List<String[]> listPerDate) throws ParseException, IOException {
+        List<Country> countryList  = readCsv.getDataFromCsv();
         // Get users registered count by day
         // generate user id using UUID
         // generate other field values cost, sales, as numbers and cost< sales, appInvitesSentOut, acceptedInvites, ReviewOnAppStore, ReviewOnGoogle(0-9), averageReview(0<x<5), shareWine, shareWineList
@@ -213,57 +231,54 @@ public class CsvWriterSimple {
         // ER USER, leadToVivino, leadToVintec, leadToElectrolux, leadToAEG, registeredForWarrantyVintec, registeredForWarrantyAEG, registeredForWarrantyElux,becomeVinClub, isVintec
         String[] header = {"id", "cost", "sales", "appInvitesSentOut", "acceptedInvites", "ReviewOnAppStore", "ReviewOnGoogle", "averageReview", "shareWine", "shareWineList", "ARPU",
                 "addNewCellerFirst24Hours", "logged5FirstWeek", "scanned10FirstWeek", "ratedFirstWeek", "weeklyAcitve", "monthlyActive", "drinkFirstMonth", "1DayRetention", "1WeekRetention", "1MonthRetention", "winBack", "inactive",
-                "leadToVivino", "leadToVintec", "leadToElectrolux", "leadToAEG", "registeredForWarrantyVintec", "registeredForWarrantyAEG", "registeredForWarrantyElux", "becomeVinClub", "isVintec", "date"};
-        System.out.println("header length is: " + header.length);
+                "leadToVivino", "leadToVintec", "leadToElectrolux", "leadToAEG", "registeredForWarrantyVintec", "registeredForWarrantyAEG", "registeredForWarrantyElux", "becomeVinClub", "isVintec", "country","continent","date"};
+        System.out.println("888888  header length is: " + header.length);
+        List<String[]> listPerUser = new ArrayList<>();
         listPerUser.add(header);
-
-
-        List<Integer> costList = new ArrayList<>();
-        List<Integer> salesList = new ArrayList<>();
-        List<Integer> invitesSentOutList = new ArrayList<>();
-        List<Integer> acceptedInvitesList = new ArrayList<>();
-        List<Integer> reviewOnAppStoreList = new ArrayList<>();
-        List<Integer> reviewOnGoogleList = new ArrayList<>();
-
-        List<Integer> averageReviewList = new ArrayList<>();
-        List<Integer> shareWineList = new ArrayList<>();
-        List<Integer> shareWineListList = new ArrayList<>();
-        List<Integer> ARPUList = new ArrayList<>();
-
-
-        List<Integer> addNewCellerFirst24HoursList = new ArrayList<>();
-        List<Integer> logged5FirstWeekList = new ArrayList<>();
-        List<Integer> scanned10FirstWeekList = new ArrayList<>();
-        List<Integer> ratedFirstWeekList = new ArrayList<>();
-        List<Integer> weeklyAcitveList = new ArrayList<>();
-        List<Integer> monthlyActiveList = new ArrayList<>();
-        List<Integer> drinkFirstMonthList = new ArrayList<>();
-        List<Integer> firstDayRetentionList = new ArrayList<>();
-        List<Integer> firstWeekRetentionList = new ArrayList<>();
-        List<Integer> firstMonthRetentionList = new ArrayList<>();
-
-
-        List<Integer> winBackList = new ArrayList<>();
-        List<Integer> inactiveList = new ArrayList<>();
-        List<Integer> leadToVivinoList = new ArrayList<>();
-        List<Integer> leadToVintecList = new ArrayList<>();
-        List<Integer> leadToElectroluxList = new ArrayList<>();
-        List<Integer> leadToAEGList = new ArrayList<>();
-        List<Integer> registeredForWarrantyVintecList = new ArrayList<>();
-        List<Integer> registeredForWarrantyAEGList = new ArrayList<>();
-        List<Integer> registeredForWarrantyEluxList = new ArrayList<>();
-        List<Integer> becomeVinClubList = new ArrayList<>();
-        List<Integer> isVinteList = new ArrayList<>();
-
-
         for (int i = 1; i < listPerDate.size(); i++) {
+            List<Country> randomizedCountryList = getRandomizedCountryList(countryList);
+            System.out.println("listPerDate.get(i) :" + listPerDate.get(i).length);
             String[] currentRow = listPerDate.get(i);
-            String currentDate = currentRow[12];
+            String currentDate = currentRow[4];
             System.out.println("current DATE is :" + currentDate);
-            int currentRegisteredCount = Integer.parseInt(currentRow[4]);
+            int currentRegisteredCount = Integer.parseInt(currentRow[3]);
 
-            costList = dataGenerator.generateRandomizedIntegerList("scale1", currentRegisteredCount);
-            salesList = dataGenerator.generateRandomizedIntegerList("scale2", currentRegisteredCount);
+            List<Integer> costList = dataGenerator.generateRandomizedIntegerList("scale1", currentRegisteredCount);
+            List<Integer> salesList = dataGenerator.generateRandomizedIntegerList("scale2", currentRegisteredCount);
+            List<Integer> invitesSentOutList = new ArrayList<>();
+            List<Integer> acceptedInvitesList = new ArrayList<>();
+            List<Integer> reviewOnAppStoreList = new ArrayList<>();
+            List<Integer> reviewOnGoogleList = new ArrayList<>();
+
+            List<Integer> averageReviewList = new ArrayList<>();
+            List<Integer> shareWineList = new ArrayList<>();
+            List<Integer> shareWineListList = new ArrayList<>();
+            List<Integer> ARPUList = new ArrayList<>();
+
+
+            List<Integer> addNewCellerFirst24HoursList = new ArrayList<>();
+            List<Integer> logged5FirstWeekList = new ArrayList<>();
+            List<Integer> scanned10FirstWeekList = new ArrayList<>();
+            List<Integer> ratedFirstWeekList = new ArrayList<>();
+            List<Integer> weeklyAcitveList = new ArrayList<>();
+            List<Integer> monthlyActiveList = new ArrayList<>();
+            List<Integer> drinkFirstMonthList = new ArrayList<>();
+            List<Integer> firstDayRetentionList = new ArrayList<>();
+            List<Integer> firstWeekRetentionList = new ArrayList<>();
+            List<Integer> firstMonthRetentionList = new ArrayList<>();
+
+
+            List<Integer> winBackList = new ArrayList<>();
+            List<Integer> inactiveList = new ArrayList<>();
+            List<Integer> leadToVivinoList = new ArrayList<>();
+            List<Integer> leadToVintecList = new ArrayList<>();
+            List<Integer> leadToElectroluxList = new ArrayList<>();
+            List<Integer> leadToAEGList = new ArrayList<>();
+            List<Integer> registeredForWarrantyVintecList = new ArrayList<>();
+            List<Integer> registeredForWarrantyAEGList = new ArrayList<>();
+            List<Integer> registeredForWarrantyEluxList = new ArrayList<>();
+            List<Integer> becomeVinClubList = new ArrayList<>();
+            List<Integer> isVinteList = new ArrayList<>();
             invitesSentOutList = dataGenerator.generateRandomizedIntegerList("scale5", currentRegisteredCount);
             acceptedInvitesList = dataGenerator.generateRandomizedIntegerList("scale4", currentRegisteredCount);
             reviewOnAppStoreList = dataGenerator.generateRandomizedIntegerList("scale5", currentRegisteredCount);
@@ -362,6 +377,8 @@ public class CsvWriterSimple {
                         registeredForWarrantyElux,
                         becomeVinClub,
                         isVinte,
+                        randomizedCountryList.get(x).getName(),
+                        randomizedCountryList.get(x).getContinent(),
                         currentDate
                 };
 
@@ -371,3 +388,4 @@ public class CsvWriterSimple {
         return listPerUser;
     }
 }
+

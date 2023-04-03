@@ -34,8 +34,9 @@ public class testDateGeneartor {
 
     @Test
     void  testCreateCsvDataUserTable() throws ParseException {
-
-        List<String[]> lists = CsvWriterSimple.createCsvDataUserTable();
+        List<String[]>
+        TotalPerDate = CsvWriterSimple.createCsvVisitorsTotalPerDate();
+        List<String[]> lists = CsvWriterSimple.createCsvDataUserTable(TotalPerDate );
         assertTrue(lists.get(0)[32]=="date");
         assertTrue(lists.get(0).length==33);
     }
